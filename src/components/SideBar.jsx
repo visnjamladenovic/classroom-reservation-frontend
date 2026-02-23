@@ -47,7 +47,7 @@ export default function Sidebar({ active, onNav, onLogout }) {
               fontSize: 15,
             }}
           >
-            🏫
+            🗓️
           </div>
           <div>
             <div
@@ -59,7 +59,7 @@ export default function Sidebar({ active, onNav, onLogout }) {
                 letterSpacing: "-0.01em",
               }}
             >
-              ClassroomRes
+              Book a Classroom
             </div>
             <div style={{ fontSize: 10, color: "#4a5568" }}>
               {isAdmin ? "Administrator" : "User"}
