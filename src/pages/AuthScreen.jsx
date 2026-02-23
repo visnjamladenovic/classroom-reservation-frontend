@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { apiFetch, setAuth } from "../api";
+import Field from "../components/Field";
+import { inputStyle } from "../components/inputStyle";
 
-export default function AuthScreen({ onAuth })    
-{
+export default function AuthScreen({ onAuth }) {
   const [mode, setMode] = useState("login");
   const [form, setForm] = useState({
     email: "",
@@ -95,41 +96,74 @@ export default function AuthScreen({ onAuth })
           {mode === "login" ? "Login" : "Register"}
         </h2>
 
-        <Field
-          label="Email"
-          value={form.email}
-          onChange={(v) => setForm({ ...form, email: v })}
-        />
+        <Field label="Email">
+          <input
+            style={inputStyle}
+            type="email"
+            value={form.email}
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
+            placeholder="user@university.edu"
+          />
+        </Field>
 
-        <Field
-          label="Password"
-          type="password"
-          value={form.password}
-          onChange={(v) => setForm({ ...form, password: v })}
-        />
+        <Field label="Password">
+          <input
+            style={inputStyle}
+            type="password"
+            value={form.password}
+            onChange={(e) => setForm({ ...form, password: e.target.value })}
+            placeholder="••••••••"
+            onKeyDown={(e) => e.key === "Enter" && submit()}
+          />
+        </Field>
 
         {mode === "register" && (
           <>
-            <Field
-              label="First Name"
-              value={form.firstName}
-              onChange={(v) => setForm({ ...form, firstName: v })}
-            />
-            <Field
-              label="Last Name"
-              value={form.lastName}
-              onChange={(v) => setForm({ ...form, lastName: v })}
-            />
-            <Field
-              label="Phone"
-              value={form.phoneNumber}
-              onChange={(v) => setForm({ ...form, phoneNumber: v })}
-            />
+            <Field label="First Name">
+              <input
+                style={inputStyle}
+                value={form.firstName}
+                onChange={(e) =>
+                  setForm({ ...form, firstName: e.target.value })
+                }
+                placeholder="Jane"
+              />
+            </Field>
+            <Field label="Last Name">
+              <input
+                style={inputStyle}
+                value={form.lastName}
+                onChange={(e) =>
+                  setForm({ ...form, lastName: e.target.value })
+                }
+                placeholder="Doe"
+              />
+            </Field>
+            <Field label="Phone (optional)">
+              <input
+                style={inputStyle}
+                value={form.phoneNumber}
+                onChange={(e) =>
+                  setForm({ ...form, phoneNumber: e.target.value })
+                }
+                placeholder="+1 555 0100"
+              />
+            </Field>
           </>
         )}
 
         {error && (
-          <div style={{ color: "#ef4444", marginBottom: 16 }}>
+          <div
+            style={{
+              background: "#1a0a0a",
+              border: "1px solid #5c1212",
+              color: "#ff6b6b",
+              borderRadius: 6,
+              padding: "10px 12px",
+              fontSize: 12,
+              marginBottom: 14,
+            }}
+          >
             {error}
           </div>
         )}
@@ -140,15 +174,19 @@ export default function AuthScreen({ onAuth })
           style={{
             width: "100%",
             padding: 12,
-            background: "#2563eb",
-            color: "white",
+            background: loading ? "#1e2d3d" : "#2563eb",
+            color: loading ? "#4a5568" : "white",
             border: "none",
             borderRadius: 8,
-            cursor: "pointer",
+            cursor: loading ? "not-allowed" : "pointer",
             fontWeight: "bold",
+            fontFamily: "'IBM Plex Mono', monospace",
+            fontSize: 13,
+            letterSpacing: "0.04em",
+            transition: "all 0.15s",
           }}
         >
-          {loading ? "Loading..." : mode === "login" ? "Login" : "Register"}
+          {loading ? "..." : mode === "login" ? "SIGN IN" : "CREATE ACCOUNT"}
         </button>
 
         <div
@@ -157,10 +195,9 @@ export default function AuthScreen({ onAuth })
             textAlign: "center",
             color: "#94a3b8",
             cursor: "pointer",
+            fontSize: 13,
           }}
-          onClick={() =>
-            setMode(mode === "login" ? "register" : "login")
-          }
+          onClick={() => setMode(mode === "login" ? "register" : "login")}
         >
           {mode === "login"
             ? "No account? Register"
