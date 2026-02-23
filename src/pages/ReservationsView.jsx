@@ -3,7 +3,7 @@ import { apiFetch, getRole } from "../api";
 import StatusBadge from "../components/StatusBadge";
 import ActionBtn from "../components/ActionBtn";
 import CreateReservationModal from "../components/CreateReservationModal";
-import { inputStyle } from "../components/Field";
+import { inputStyle } from "../components/inputStyle";
 
 export default function ReservationsView({ addToast }) {
   const [reservations, setReservations] = useState([]);
