@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { apiFetch } from "../api";
 import Modal from "./Modal";
-import Field, { inputStyle } from "./Field";
+import Field from "./Field";
+import { inputStyle } from "./inputStyle";
 
 export default function CreateReservationModal({
   classrooms,

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { apiFetch } from "../api";
 import ActionBtn from "../components/ActionBtn";
-import { inputStyle } from "../components/Field";
+import { inputStyle } from "../components/inputStyle";
 
 export default function UsersView({ addToast }) {
   const [users, setUsers] = useState([]);

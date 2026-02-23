@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { apiFetch } from "../api";
-import Field, { inputStyle } from "../components/Field";
+import Field from "../components/Field";
+import { inputStyle } from "../components/inputStyle";
 
 export default function ProfileView({ addToast }) {
   const [user, setUser] = useState(null);
