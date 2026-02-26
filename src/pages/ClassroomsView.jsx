@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { apiFetch, getRole } from "../api";
 import ClassroomModal from "../components/ClassroomModal";
+import { inputStyle } from "../components/inputStyle";
 
 const TYPE_COLORS = {
   Lecture: "#2563eb",
@@ -35,22 +36,35 @@ export default function ClassroomsView({ addToast }) {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [editRoom, setEditRoom] = useState(null);
+  const [search, setSearch] = useState("");
+  const [classroomType, setClassroomType] = useState("");
+  const [minCapacity, setMinCapacity] = useState("");
+  const [availableFrom, setAvailableFrom] = useState("");
+  const [availableTo, setAvailableTo] = useState("");
   const isAdmin = getRole() === "Admin";
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await apiFetch("/classroom");
+      const params = new URLSearchParams();
+      if (search) params.set("search", search);
+      if (classroomType) params.set("classroomType", classroomType);
+      if (minCapacity) params.set("minCapacity", minCapacity);
+      if (availableFrom) params.set("availableFrom", new Date(availableFrom).toISOString());
+      if (availableTo) params.set("availableTo", new Date(availableTo).toISOString());
+      const query = params.toString() ? `?${params.toString()}` : "";
+      const data = await apiFetch(`/classroom${query}`);
       setClassrooms(data || []);
     } catch (e) {
       addToast(e.message, "error");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [search, classroomType, minCapacity, availableFrom, availableTo]);
 
   useEffect(() => {
-    load();
+    const t = setTimeout(load, 300);
+    return () => clearTimeout(t);
   }, [load]);
 
   async function handleDelete(id) {
@@ -71,23 +85,15 @@ export default function ClassroomsView({ addToast }) {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          marginBottom: 20,
+          marginBottom: 16,
         }}
       >
         <div>
-          <h2
-            style={{
-              margin: "0 0 2px",
-              fontSize: 20,
-              fontWeight: 700,
-              color: "#e8edf2",
-            }}
-          >
+          <h2 style={{ margin: "0 0 2px", fontSize: 20, fontWeight: 700, color: "#e8edf2" }}>
             Classrooms
           </h2>
           <p style={{ margin: 0, fontSize: 13, color: "#6b7c8d" }}>
-            {classrooms.filter((c) => c.isActive).length} of{" "}
-            {classrooms.length} active
+            {classrooms.filter((c) => c.isActive).length} of {classrooms.length} active
           </p>
         </div>
         {isAdmin && (
@@ -107,6 +113,73 @@ export default function ClassroomsView({ addToast }) {
             }}
           >
             + ADD ROOM
+          </button>
+        )}
+      </div>
+
+      {/* Filters */}
+      <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap", alignItems: "flex-end" }}>
+        <input
+          style={{ ...inputStyle, width: 200 }}
+          placeholder="Search..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <select
+          style={{ ...inputStyle, width: 140, cursor: "pointer" }}
+          value={classroomType}
+          onChange={(e) => setClassroomType(e.target.value)}
+        >
+          <option value="">All types</option>
+          {["Lecture", "Lab", "Seminar", "Conference"].map((t) => (
+            <option key={t}>{t}</option>
+          ))}
+        </select>
+        <input
+          type="number"
+          style={{ ...inputStyle, width: 130 }}
+          placeholder="Min capacity"
+          value={minCapacity}
+          onChange={(e) => setMinCapacity(e.target.value)}
+          min={1}
+        />
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <span style={{ fontSize: 11, color: "#6b7c8d", fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+            Available from
+          </span>
+          <input
+            type="datetime-local"
+            style={{ ...inputStyle, width: 190 }}
+            value={availableFrom}
+            onChange={(e) => setAvailableFrom(e.target.value)}
+          />
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <span style={{ fontSize: 11, color: "#6b7c8d", fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+            Available to
+          </span>
+          <input
+            type="datetime-local"
+            style={{ ...inputStyle, width: 190 }}
+            value={availableTo}
+            onChange={(e) => setAvailableTo(e.target.value)}
+          />
+        </div>
+        {(search || classroomType || minCapacity || availableFrom || availableTo) && (
+          <button
+            onClick={() => { setSearch(""); setClassroomType(""); setMinCapacity(""); setAvailableFrom(""); setAvailableTo(""); }}
+            style={{
+              padding: "8px 14px",
+              background: "transparent",
+              border: "1px solid #1e2d3d",
+              borderRadius: 7,
+              color: "#6b7c8d",
+              fontSize: 12,
+              fontFamily: "'IBM Plex Mono', monospace",
+              cursor: "pointer",
+            }}
+          >
+            Clear
           </button>
         )}
       </div>
@@ -134,7 +207,6 @@ export default function ClassroomsView({ addToast }) {
                 overflow: "hidden",
               }}
             >
-              {/* Top accent bar */}
               <div
                 style={{
                   position: "absolute",
@@ -142,11 +214,9 @@ export default function ClassroomsView({ addToast }) {
                   left: 0,
                   right: 0,
                   height: 2,
-                  background:
-                    TYPE_COLORS[c.classroomType] || TYPE_COLORS.Lecture,
+                  background: TYPE_COLORS[c.classroomType] || TYPE_COLORS.Lecture,
                 }}
               />
-
               <div
                 style={{
                   display: "flex",
@@ -156,26 +226,16 @@ export default function ClassroomsView({ addToast }) {
                 }}
               >
                 <div>
-                  <div
-                    style={{
-                      fontSize: 13,
-                      fontWeight: 700,
-                      color: "#e8edf2",
-                      fontFamily: "'IBM Plex Mono', monospace",
-                    }}
-                  >
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#e8edf2", fontFamily: "'IBM Plex Mono', monospace" }}>
                     {c.roomNumber}
                   </div>
-                  <div style={{ fontSize: 12, color: "#6b7c8d" }}>
-                    {c.name}
-                  </div>
+                  <div style={{ fontSize: 12, color: "#6b7c8d" }}>{c.name}</div>
                 </div>
                 <span
                   style={{
                     fontSize: 10,
                     fontWeight: 600,
-                    color:
-                      TYPE_COLORS[c.classroomType] || TYPE_COLORS.Lecture,
+                    color: TYPE_COLORS[c.classroomType] || TYPE_COLORS.Lecture,
                     background: `${TYPE_COLORS[c.classroomType] || TYPE_COLORS.Lecture}18`,
                     padding: "3px 8px",
                     borderRadius: 4,
@@ -187,72 +247,27 @@ export default function ClassroomsView({ addToast }) {
                   {c.classroomType}
                 </span>
               </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  gap: 16,
-                  marginBottom: 12,
-                  flexWrap: "wrap",
-                }}
-              >
+              <div style={{ display: "flex", gap: 16, marginBottom: 12, flexWrap: "wrap" }}>
                 <div>
-                  <div
-                    style={{
-                      fontSize: 10,
-                      color: "#4a5568",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    Capacity
-                  </div>
-                  <div style={{ fontSize: 12, color: "#6b7c8d" }}>
-                    {c.capacity} seats
-                  </div>
+                  <div style={{ fontSize: 10, color: "#4a5568", textTransform: "uppercase" }}>Capacity</div>
+                  <div style={{ fontSize: 12, color: "#6b7c8d" }}>{c.capacity} seats</div>
                 </div>
                 <div>
-                  <div
-                    style={{
-                      fontSize: 10,
-                      color: "#4a5568",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    Location
-                  </div>
-                  <div style={{ fontSize: 12, color: "#6b7c8d" }}>
-                    {c.location}
-                  </div>
+                  <div style={{ fontSize: 10, color: "#4a5568", textTransform: "uppercase" }}>Location</div>
+                  <div style={{ fontSize: 12, color: "#6b7c8d" }}>{c.location}</div>
                 </div>
               </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  gap: 6,
-                  flexWrap: "wrap",
-                  marginBottom: 12,
-                }}
-              >
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
                 {c.hasProjector && <Tag>Projector</Tag>}
                 {c.hasWhiteboard && <Tag>Whiteboard</Tag>}
                 {c.hasComputers && <Tag>Computers</Tag>}
                 {!c.isActive && <Tag color="#DC3545">Inactive</Tag>}
               </div>
-
               {c.description && (
-                <div
-                  style={{
-                    fontSize: 11,
-                    color: "#4a5568",
-                    marginBottom: 10,
-                    lineHeight: 1.5,
-                  }}
-                >
+                <div style={{ fontSize: 11, color: "#4a5568", marginBottom: 10, lineHeight: 1.5 }}>
                   {c.description}
                 </div>
               )}
-
               {isAdmin && (
                 <div style={{ display: "flex", gap: 6 }}>
                   <button
@@ -296,24 +311,15 @@ export default function ClassroomsView({ addToast }) {
       {showCreate && (
         <ClassroomModal
           onClose={() => setShowCreate(false)}
-          onSaved={() => {
-            setShowCreate(false);
-            load();
-            addToast("Classroom created!", "success");
-          }}
+          onSaved={() => { setShowCreate(false); load(); addToast("Classroom created!", "success"); }}
           addToast={addToast}
         />
       )}
-
       {editRoom && (
         <ClassroomModal
           room={editRoom}
           onClose={() => setEditRoom(null)}
-          onSaved={() => {
-            setEditRoom(null);
-            load();
-            addToast("Classroom updated!", "success");
-          }}
+          onSaved={() => { setEditRoom(null); load(); addToast("Classroom updated!", "success"); }}
           addToast={addToast}
         />
       )}
