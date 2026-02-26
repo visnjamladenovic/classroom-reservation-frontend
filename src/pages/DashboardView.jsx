@@ -109,6 +109,7 @@ export default function DashboardView({ addToast }) {
         <div style={{ color: "#6b7c8d", fontSize: 13 }}>Loading...</div>
       ) : (
         <>
+          {/* Stat Cards */}
           <div
             style={{
               display: "grid",
@@ -141,7 +142,7 @@ export default function DashboardView({ addToast }) {
             />
           </div>
 
-          {/* Recent reservations table */}
+          {/* Recent Reservations Table */}
           <div
             style={{
               background: "#0d1117",
@@ -176,7 +177,7 @@ export default function DashboardView({ addToast }) {
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr>
-                    {["Title", "Room", "Date", "Status"].map((h) => (
+                    {["Title", "Room", "Professor", "Date", "Status"].map((h) => (
                       <th
                         key={h}
                         style={{
@@ -202,9 +203,7 @@ export default function DashboardView({ addToast }) {
                       key={r.id}
                       style={{
                         borderBottom:
-                          i < recent.length - 1
-                            ? "1px solid #141d27"
-                            : "none",
+                          i < recent.length - 1 ? "1px solid #141d27" : "none",
                       }}
                     >
                       <td
@@ -225,6 +224,16 @@ export default function DashboardView({ addToast }) {
                         }}
                       >
                         {r.roomNumber} — {r.classroomName}
+                      </td>
+                      <td
+                        style={{
+                          padding: "12px 18px",
+                          fontSize: 12,
+                          color: "#6b7c8d",
+                          fontFamily: "'IBM Plex Mono', monospace",
+                        }}
+                      >
+                        {r.userFullName}
                       </td>
                       <td
                         style={{
