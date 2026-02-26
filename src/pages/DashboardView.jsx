@@ -56,19 +56,114 @@ function StatCard({ label, value, sub, accent }) {
   );
 }
 
+function StatsTable({ title, accent, rows, columns }) {
+  return (
+    <div
+      style={{
+        background: "#0d1117",
+        border: "1px solid #1e2d3d",
+        borderRadius: 10,
+        overflow: "hidden",
+      }}
+    >
+      <div
+        style={{
+          padding: "14px 18px",
+          borderBottom: "1px solid #1e2d3d",
+          fontSize: 13,
+          fontWeight: 600,
+          color: "#e8edf2",
+          fontFamily: "'IBM Plex Mono', monospace",
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+        }}
+      >
+        <span
+          style={{
+            width: 8,
+            height: 8,
+            borderRadius: "50%",
+            background: accent || "#2563eb",
+            display: "inline-block",
+          }}
+        />
+        {title}
+      </div>
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <thead>
+          <tr>
+            {columns.map((col) => (
+              <th
+                key={col.key}
+                style={{
+                  padding: "10px 18px",
+                  textAlign: col.align || "left",
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: "#4a5568",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                  fontFamily: "'IBM Plex Mono', monospace",
+                  borderBottom: "1px solid #1e2d3d",
+                }}
+              >
+                {col.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, i) => (
+            <tr
+              key={i}
+              style={{
+                borderBottom: i < rows.length - 1 ? "1px solid #141d27" : "none",
+              }}
+            >
+              {columns.map((col) => (
+                <td
+                  key={col.key}
+                  style={{
+                    padding: "11px 18px",
+                    fontSize: 12,
+                    color: col.highlight ? "#e8edf2" : "#6b7c8d",
+                    fontFamily: "'IBM Plex Mono', monospace",
+                    textAlign: col.align || "left",
+                    fontWeight: col.highlight ? 600 : 400,
+                  }}
+                >
+                  {row[col.key]}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export default function DashboardView({ addToast }) {
   const [reservations, setReservations] = useState([]);
   const [classrooms, setClassrooms] = useState([]);
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const isAdmin = getRole() === "Admin";
 
   useEffect(() => {
-    Promise.all([
+    const requests = [
       apiFetch(isAdmin ? "/reservation" : "/reservation/my").catch(() => []),
       apiFetch("/classroom").catch(() => []),
-    ]).then(([r, c]) => {
+    ];
+    if (isAdmin) {
+      requests.push(apiFetch("/reservation/stats").catch(() => null));
+    }
+
+    Promise.all(requests).then(([r, c, s]) => {
       setReservations(r || []);
       setClassrooms(c || []);
+      if (s) setStats(s);
       setLoading(false);
     });
   }, [isAdmin]);
@@ -148,6 +243,7 @@ export default function DashboardView({ addToast }) {
               background: "#0d1117",
               border: "1px solid #1e2d3d",
               borderRadius: 10,
+              marginBottom: 24,
             }}
           >
             <div
@@ -254,6 +350,65 @@ export default function DashboardView({ addToast }) {
               </table>
             )}
           </div>
+
+          {/* Statistics (Admin only) */}
+          {isAdmin && stats && (
+            <>
+              <h3
+                style={{
+                  margin: "0 0 14px",
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: "#6b7c8d",
+                  fontFamily: "'IBM Plex Mono', monospace",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                }}
+              >
+                Statistics
+              </h3>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                <StatsTable
+                  title="Reservations by Classroom"
+                  accent="#2563eb"
+                  columns={[
+                    { key: "room", label: "Room", highlight: true },
+                    { key: "name", label: "Name" },
+                    { key: "count", label: "Reservations", align: "right", highlight: true },
+                  ]}
+                  rows={stats.byClassroom.map((item) => ({
+                    room: item.roomNumber,
+                    name: item.classroomName,
+                    count: item.count,
+                  }))}
+                />
+                <StatsTable
+                  title="Reservations by Professor"
+                  accent="#6f42c1"
+                  columns={[
+                    { key: "name", label: "Professor", highlight: true },
+                    { key: "count", label: "Reservations", align: "right", highlight: true },
+                  ]}
+                  rows={stats.byUser.map((item) => ({
+                    name: item.userFullName,
+                    count: item.count,
+                  }))}
+                />
+                <StatsTable
+                  title="Reservations by Status"
+                  accent="#F0AD4E"
+                  columns={[
+                    { key: "status", label: "Status", highlight: true },
+                    { key: "count", label: "Count", align: "right", highlight: true },
+                  ]}
+                  rows={Object.entries(stats.byStatus).map(([status, count]) => ({
+                    status,
+                    count,
+                  }))}
+                />
+              </div>
+            </>
+          )}
         </>
       )}
     </div>
