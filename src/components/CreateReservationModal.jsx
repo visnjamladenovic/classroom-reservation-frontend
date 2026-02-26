@@ -30,13 +30,32 @@ export default function CreateReservationModal({
 
   async function submit() {
     setLoading(true);
+
+    onst [startDateStr, startTimeStr] = form.startTime.split("T");
+const [endDateStr, endTimeStr] = form.endTime.split("T");
+const startHour = parseInt(startTimeStr.split(":")[0]);
+const endHour = parseInt(endTimeStr.split(":")[0]);
+const endMinute = parseInt(endTimeStr.split(":")[1]);
+
+if (startHour < 8 || startHour > 19) {
+  addToast("Reservations can only start between 08:00 and 20:00.", "error");
+  setLoading(false);
+  return;
+}
+
+if (endHour > 20 || (endHour === 20 && endMinute > 0)) {
+  addToast("Reservations must end by 20:00.", "error");
+  setLoading(false);
+  return;
+}
+
     try {
       await apiFetch("/reservation", {
         method: "POST",
         body: JSON.stringify({
           ...form,
-          startTime: new Date(form.startTime).toISOString(),
-          endTime: new Date(form.endTime).toISOString(),
+          startTime: start.toISOString(),
+          endTime: end.toISOString(),
           attendeeCount: form.attendeeCount
             ? parseInt(form.attendeeCount)
             : null,
