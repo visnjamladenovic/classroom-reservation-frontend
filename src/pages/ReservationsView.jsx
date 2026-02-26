@@ -27,8 +27,8 @@ function CalendarView({ reservations, onDayClick, selectedDay }) {
   const today    = new Date();
   const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
 
-  const firstDay    = new Date(view.year, view.month, 1).getDay();
-  const daysInMonth = new Date(view.year, view.month + 1, 0).getDate();
+  const firstDay      = new Date(view.year, view.month, 1).getDay();
+  const daysInMonth   = new Date(view.year, view.month + 1, 0).getDate();
   const prevMonthDays = new Date(view.year, view.month, 0).getDate();
 
   const byDay = {};
@@ -54,7 +54,6 @@ function CalendarView({ reservations, onDayClick, selectedDay }) {
 
   return (
     <div>
-      {/* Month navigation */}
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16 }}>
         <div style={{ display:"flex", alignItems:"center", gap:12 }}>
           <span style={{ fontSize:18, fontWeight:700, color:"#e8edf2", fontFamily:"'IBM Plex Mono', monospace" }}>
@@ -84,7 +83,6 @@ function CalendarView({ reservations, onDayClick, selectedDay }) {
         </div>
       </div>
 
-      {/* Day-of-week header */}
       <div style={{ display:"grid", gridTemplateColumns:"repeat(7, 1fr)", borderBottom:"1px solid #1e2d3d" }}>
         {DAYS_SHORT.map(d => (
           <div key={d} style={{
@@ -95,17 +93,16 @@ function CalendarView({ reservations, onDayClick, selectedDay }) {
         ))}
       </div>
 
-      {/* Day cells */}
       <div style={{
         display:"grid", gridTemplateColumns:"repeat(7, 1fr)",
         border:"1px solid #1e2d3d", borderTop:"none",
         borderRadius:"0 0 10px 10px", overflow:"hidden",
       }}>
         {cells.map((cell, idx) => {
-          const key      = cell.ghost ? null : toKey(cell.day);
-          const events   = key ? (byDay[key] || []) : [];
-          const isToday  = key === todayStr;
-          const isSel    = key === selectedDay;
+          const key       = cell.ghost ? null : toKey(cell.day);
+          const events    = key ? (byDay[key] || []) : [];
+          const isToday   = key === todayStr;
+          const isSel     = key === selectedDay;
           const isWeekend = idx % 7 === 0 || idx % 7 === 6;
 
           return (
@@ -125,7 +122,6 @@ function CalendarView({ reservations, onDayClick, selectedDay }) {
               onMouseEnter={e => { if (!cell.ghost && !isSel) e.currentTarget.style.background = "#111820"; }}
               onMouseLeave={e => { if (!cell.ghost && !isSel) e.currentTarget.style.background = isWeekend ? "#0a0f14" : "#0d1117"; }}
             >
-              {/* Day number */}
               <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:4 }}>
                 <span style={{
                   fontSize:12, fontWeight: isToday ? 700 : 400,
@@ -139,7 +135,6 @@ function CalendarView({ reservations, onDayClick, selectedDay }) {
                 </span>
               </div>
 
-              {/* Event chips */}
               {!cell.ghost && events.slice(0, 3).map(r => (
                 <div key={r.id} title={`${r.title} · ${new Date(r.startTime).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}–${new Date(r.endTime).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}`}
                   style={{
@@ -259,7 +254,8 @@ function DayPanel({ dateStr, reservations, isAdmin, onApprove, onCancel, onDelet
                         <ActionBtn onClick={() => onApprove(r.id,"Rejected")} color="#DC3545" label="✗" title="Reject"/>
                       </>
                     )}
-                    {!isAdmin && r.status === "Pending" && (
+                    {/* FIX: allow cancelling both Pending and Approved reservations */}
+                    {!isAdmin && (r.status === "Pending" || r.status === "Approved") && (
                       <ActionBtn onClick={() => onCancel(r.id)} color="#F0AD4E" label="⊗" title="Cancel"/>
                     )}
                     <ActionBtn onClick={() => onDelete(r.id)} color="#6b7c8d" label="🗑" title="Delete"/>
@@ -275,20 +271,27 @@ function DayPanel({ dateStr, reservations, isAdmin, onApprove, onCancel, onDelet
 }
 
 export default function ReservationsView({ addToast }) {
-  const [reservations, setReservations] = useState([]);
-  const [classrooms,   setClassrooms]   = useState([]);
-  const [loading,      setLoading]      = useState(true);
-  const [showCreate,   setShowCreate]   = useState(false);
-  const [filterStatus, setFilterStatus] = useState("");
-  const [viewMode,     setViewMode]     = useState("list");
-  const [selectedDay,  setSelectedDay]  = useState(null);
+  const [reservations,   setReservations]   = useState([]);
+  const [classrooms,     setClassrooms]     = useState([]);
+  const [loading,        setLoading]        = useState(true);
+  const [showCreate,     setShowCreate]     = useState(false);
+  const [filterStatus,   setFilterStatus]   = useState("");
+  const [classroomSearch,setClassroomSearch]= useState("");
+  const [dateFilter,     setDateFilter]     = useState("");
+  const [upcomingOnly,   setUpcomingOnly]   = useState(false);
+  const [viewMode,       setViewMode]       = useState("list");
+  const [selectedDay,    setSelectedDay]    = useState(null);
   const isAdmin = getRole() === "Admin";
 
+  // FIX: addToast correctly listed as dep
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (filterStatus) params.set("status", filterStatus);
+      if (filterStatus)    params.set("status",          filterStatus);
+      if (classroomSearch) params.set("classroomSearch", classroomSearch);
+      if (dateFilter)      params.set("date",            dateFilter);
+      if (upcomingOnly)    params.set("upcoming",        "true");
       const query = params.toString() ? `?${params.toString()}` : "";
       const [r, c] = await Promise.all([
         apiFetch(isAdmin ? `/reservation${query}` : `/reservation/my${query}`),
@@ -301,7 +304,7 @@ export default function ReservationsView({ addToast }) {
     } finally {
       setLoading(false);
     }
-  }, [isAdmin, filterStatus, addToast]);
+  }, [isAdmin, filterStatus, classroomSearch, dateFilter, upcomingOnly, addToast]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -330,6 +333,15 @@ export default function ReservationsView({ addToast }) {
     } catch (e) { addToast(e.message, "error"); }
   }
 
+  function clearFilters() {
+    setFilterStatus("");
+    setClassroomSearch("");
+    setDateFilter("");
+    setUpcomingOnly(false);
+  }
+
+  const hasActiveFilters = filterStatus || classroomSearch || dateFilter || upcomingOnly;
+
   return (
     <div>
       {/* ── Header ── */}
@@ -341,7 +353,7 @@ export default function ReservationsView({ addToast }) {
           </p>
         </div>
         <div style={{ display:"flex", gap:10, alignItems:"center" }}>
-          {/* ≡ / ▦ toggle */}
+          {/* List / Calendar toggle */}
           <div style={{
             display:"flex", background:"#0d1117",
             border:"1px solid #1e2d3d", borderRadius:7, overflow:"hidden",
@@ -375,24 +387,78 @@ export default function ReservationsView({ addToast }) {
         </div>
       </div>
 
-      {/* ── Status filter (list only) ── */}
+      {/* ── Filters (list only) ── */}
       {viewMode === "list" && (
-        <div style={{ display:"flex", gap:10, marginBottom:20, alignItems:"center" }}>
-          <select
-            value={filterStatus}
-            onChange={e => setFilterStatus(e.target.value)}
-            style={{ ...inputStyle, width:"auto", padding:"8px 12px", cursor:"pointer" }}
-          >
-            <option value="">All statuses</option>
-            {["Pending","Approved","Rejected","Cancelled"].map(s => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
-          {!loading && (
-            <span style={{ marginLeft:"auto", fontSize:11, color:"#4a5568", fontFamily:"'IBM Plex Mono', monospace" }}>
-              {reservations.length} result{reservations.length !== 1 ? "s" : ""}
-            </span>
-          )}
+        <div style={{ marginBottom:20 }}>
+          <div style={{ display:"flex", gap:10, alignItems:"center", flexWrap:"wrap" }}>
+            {/* Status */}
+            <select
+              value={filterStatus}
+              onChange={e => setFilterStatus(e.target.value)}
+              style={{ ...inputStyle, width:"auto", padding:"8px 12px", cursor:"pointer" }}
+            >
+              <option value="">All statuses</option>
+              {["Pending","Approved","Rejected","Cancelled"].map(s => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+
+            {/* Classroom search */}
+            <input
+              style={{ ...inputStyle, width:200 }}
+              placeholder="Search classroom..."
+              value={classroomSearch}
+              onChange={e => setClassroomSearch(e.target.value)}
+            />
+
+            {/* Date filter */}
+            <input
+              type="date"
+              style={{ ...inputStyle, width:"auto", padding:"8px 12px", cursor:"pointer" }}
+              value={dateFilter}
+              onChange={e => setDateFilter(e.target.value)}
+            />
+
+            {/* Upcoming toggle */}
+            <label style={{
+              display:"flex", alignItems:"center", gap:7, cursor:"pointer",
+              fontSize:12, color: upcomingOnly ? "#2563eb" : "#6b7c8d",
+              fontFamily:"'IBM Plex Mono', monospace",
+              background: upcomingOnly ? "#2563eb14" : "transparent",
+              border:`1px solid ${upcomingOnly ? "#2563eb44" : "#1e2d3d"}`,
+              borderRadius:6, padding:"7px 12px",
+              transition:"all 0.15s",
+            }}>
+              <input
+                type="checkbox"
+                checked={upcomingOnly}
+                onChange={e => setUpcomingOnly(e.target.checked)}
+                style={{ accentColor:"#2563eb" }}
+              />
+              Upcoming only
+            </label>
+
+            {/* Clear filters */}
+            {hasActiveFilters && (
+              <button
+                onClick={clearFilters}
+                style={{
+                  padding:"7px 12px", background:"transparent",
+                  border:"1px solid #5c1212", borderRadius:6,
+                  color:"#DC3545", fontSize:11,
+                  fontFamily:"'IBM Plex Mono', monospace", cursor:"pointer",
+                }}
+              >
+                ✕ Clear
+              </button>
+            )}
+
+            {!loading && (
+              <span style={{ marginLeft:"auto", fontSize:11, color:"#4a5568", fontFamily:"'IBM Plex Mono', monospace" }}>
+                {reservations.length} result{reservations.length !== 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
         </div>
       )}
 
@@ -481,7 +547,8 @@ export default function ReservationsView({ addToast }) {
                           <ActionBtn onClick={() => handleApprove(r.id,"Rejected")} color="#DC3545" label="✗" title="Reject"/>
                         </>
                       )}
-                      {!isAdmin && r.status === "Pending" && (
+                      {/* FIX: allow cancelling both Pending and Approved reservations */}
+                      {!isAdmin && (r.status === "Pending" || r.status === "Approved") && (
                         <ActionBtn onClick={() => handleCancel(r.id)} color="#F0AD4E" label="⊗" title="Cancel"/>
                       )}
                       <ActionBtn onClick={() => handleDelete(r.id)} color="#6b7c8d" label="🗑" title="Delete"/>
