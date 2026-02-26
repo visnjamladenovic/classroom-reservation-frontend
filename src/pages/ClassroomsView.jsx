@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { apiFetch, getRole } from "../api";
 import ClassroomModal from "../components/ClassroomModal";
+import { inputStyle } from "../components/inputStyle";
 
 const TYPE_COLORS = {
   Lecture: "#2563eb",
@@ -35,22 +36,31 @@ export default function ClassroomsView({ addToast }) {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [editRoom, setEditRoom] = useState(null);
+  const [search, setSearch] = useState("");
+  const [filterType, setFilterType] = useState("");
+  const [filterActive, setFilterActive] = useState("");
   const isAdmin = getRole() === "Admin";
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await apiFetch("/classroom");
+      const params = new URLSearchParams();
+      if (search.trim()) params.set("search", search.trim());
+      if (filterType) params.set("type", filterType);
+      if (filterActive !== "") params.set("isActive", filterActive);
+      const query = params.toString() ? `?${params.toString()}` : "";
+      const data = await apiFetch(`/classroom${query}`);
       setClassrooms(data || []);
     } catch (e) {
       addToast(e.message, "error");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [search, filterType, filterActive, addToast]);
 
   useEffect(() => {
-    load();
+    const t = setTimeout(load, 300);
+    return () => clearTimeout(t);
   }, [load]);
 
   async function handleDelete(id) {
@@ -64,6 +74,14 @@ export default function ClassroomsView({ addToast }) {
     }
   }
 
+  function clearFilters() {
+    setSearch("");
+    setFilterType("");
+    setFilterActive("");
+  }
+
+  const hasFilters = search || filterType || filterActive !== "";
+
   return (
     <div>
       <div
@@ -71,7 +89,7 @@ export default function ClassroomsView({ addToast }) {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          marginBottom: 20,
+          marginBottom: 16,
         }}
       >
         <div>
@@ -111,8 +129,132 @@ export default function ClassroomsView({ addToast }) {
         )}
       </div>
 
+      {/* Search & filter bar */}
+      <div
+        style={{
+          display: "flex",
+          gap: 10,
+          marginBottom: 20,
+          flexWrap: "wrap",
+          alignItems: "center",
+        }}
+      >
+        {/* Search input with icon */}
+        <div style={{ position: "relative", flex: "1 1 220px", minWidth: 180 }}>
+          <span
+            style={{
+              position: "absolute",
+              left: 10,
+              top: "50%",
+              transform: "translateY(-50%)",
+              color: "#4a5568",
+              fontSize: 13,
+              pointerEvents: "none",
+            }}
+          >
+            ⌕
+          </span>
+          <input
+            style={{ ...inputStyle, paddingLeft: 28 }}
+            placeholder="Search by name, room number, location..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+
+        {/* Type filter */}
+        <select
+          value={filterType}
+          onChange={(e) => setFilterType(e.target.value)}
+          style={{
+            ...inputStyle,
+            width: "auto",
+            padding: "9px 12px",
+            cursor: "pointer",
+            flex: "0 0 auto",
+          }}
+        >
+          <option value="">All types</option>
+          {["Lecture", "Lab", "Seminar", "Conference"].map((t) => (
+            <option key={t} value={t}>
+              {t}
+            </option>
+          ))}
+        </select>
+
+        {/* Active filter */}
+        <select
+          value={filterActive}
+          onChange={(e) => setFilterActive(e.target.value)}
+          style={{
+            ...inputStyle,
+            width: "auto",
+            padding: "9px 12px",
+            cursor: "pointer",
+            flex: "0 0 auto",
+          }}
+        >
+          <option value="">All statuses</option>
+          <option value="true">Active only</option>
+          <option value="false">Inactive only</option>
+        </select>
+
+        {/* Clear button */}
+        {hasFilters && (
+          <button
+            onClick={clearFilters}
+            style={{
+              padding: "9px 14px",
+              background: "transparent",
+              border: "1px solid #1e2d3d",
+              borderRadius: 6,
+              color: "#6b7c8d",
+              fontSize: 11,
+              fontFamily: "'IBM Plex Mono', monospace",
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+              flex: "0 0 auto",
+            }}
+          >
+            ✕ CLEAR
+          </button>
+        )}
+      </div>
+
       {loading ? (
         <div style={{ color: "#6b7c8d", fontSize: 13 }}>Loading...</div>
+      ) : classrooms.length === 0 ? (
+        <div
+          style={{
+            background: "#0d1117",
+            border: "1px solid #1e2d3d",
+            borderRadius: 10,
+            padding: "60px 20px",
+            textAlign: "center",
+            color: "#4a5568",
+            fontSize: 13,
+          }}
+        >
+          {hasFilters ? "No classrooms match your search" : "No classrooms found"}
+          {hasFilters && (
+            <div style={{ marginTop: 10 }}>
+              <button
+                onClick={clearFilters}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "#2563eb",
+                  fontSize: 12,
+                  cursor: "pointer",
+                  fontFamily: "'IBM Plex Mono', monospace",
+                  textDecoration: "underline",
+                }}
+              >
+                Clear filters
+              </button>
+            </div>
+          )}
+        </div>
       ) : (
         <div
           style={{

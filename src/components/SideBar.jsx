@@ -47,7 +47,8 @@ export default function Sidebar({ active, onNav, onLogout }) {
               fontSize: 15,
             }}
           >
-            🗓️
+            
+            
           </div>
           <div>
             <div
