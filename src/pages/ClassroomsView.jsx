@@ -80,6 +80,7 @@ export default function ClassroomsView({ addToast }) {
 
   return (
     <div>
+      {/* Header */}
       <div
         style={{
           display: "flex",
@@ -118,7 +119,15 @@ export default function ClassroomsView({ addToast }) {
       </div>
 
       {/* Filters */}
-      <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap", alignItems: "flex-end" }}>
+      <div
+        style={{
+          display: "flex",
+          gap: 10,
+          marginBottom: 20,
+          flexWrap: "wrap",
+          alignItems: "flex-end",
+        }}
+      >
         <input
           style={{ ...inputStyle, width: 200 }}
           placeholder="Search..."
@@ -144,7 +153,15 @@ export default function ClassroomsView({ addToast }) {
           min={1}
         />
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <span style={{ fontSize: 11, color: "#6b7c8d", fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+          <span
+            style={{
+              fontSize: 11,
+              color: "#6b7c8d",
+              fontFamily: "'IBM Plex Mono', monospace",
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+            }}
+          >
             Available from
           </span>
           <input
@@ -155,7 +172,15 @@ export default function ClassroomsView({ addToast }) {
           />
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <span style={{ fontSize: 11, color: "#6b7c8d", fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+          <span
+            style={{
+              fontSize: 11,
+              color: "#6b7c8d",
+              fontFamily: "'IBM Plex Mono', monospace",
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+            }}
+          >
             Available to
           </span>
           <input
@@ -167,7 +192,13 @@ export default function ClassroomsView({ addToast }) {
         </div>
         {(search || classroomType || minCapacity || availableFrom || availableTo) && (
           <button
-            onClick={() => { setSearch(""); setClassroomType(""); setMinCapacity(""); setAvailableFrom(""); setAvailableTo(""); }}
+            onClick={() => {
+              setSearch("");
+              setClassroomType("");
+              setMinCapacity("");
+              setAvailableFrom("");
+              setAvailableTo("");
+            }}
             style={{
               padding: "8px 14px",
               background: "transparent",
@@ -184,6 +215,7 @@ export default function ClassroomsView({ addToast }) {
         )}
       </div>
 
+      {/* Classroom Grid */}
       {loading ? (
         <div style={{ color: "#6b7c8d", fontSize: 13 }}>Loading...</div>
       ) : (
@@ -207,6 +239,7 @@ export default function ClassroomsView({ addToast }) {
                 overflow: "hidden",
               }}
             >
+              {/* Top color bar */}
               <div
                 style={{
                   position: "absolute",
@@ -217,6 +250,8 @@ export default function ClassroomsView({ addToast }) {
                   background: TYPE_COLORS[c.classroomType] || TYPE_COLORS.Lecture,
                 }}
               />
+
+              {/* Room header */}
               <div
                 style={{
                   display: "flex",
@@ -226,7 +261,14 @@ export default function ClassroomsView({ addToast }) {
                 }}
               >
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: "#e8edf2", fontFamily: "'IBM Plex Mono', monospace" }}>
+                  <div
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 700,
+                      color: "#e8edf2",
+                      fontFamily: "'IBM Plex Mono', monospace",
+                    }}
+                  >
                     {c.roomNumber}
                   </div>
                   <div style={{ fontSize: 12, color: "#6b7c8d" }}>{c.name}</div>
@@ -247,27 +289,39 @@ export default function ClassroomsView({ addToast }) {
                   {c.classroomType}
                 </span>
               </div>
+
+              {/* Capacity & Location */}
               <div style={{ display: "flex", gap: 16, marginBottom: 12, flexWrap: "wrap" }}>
                 <div>
-                  <div style={{ fontSize: 10, color: "#4a5568", textTransform: "uppercase" }}>Capacity</div>
+                  <div style={{ fontSize: 10, color: "#4a5568", textTransform: "uppercase" }}>
+                    Capacity
+                  </div>
                   <div style={{ fontSize: 12, color: "#6b7c8d" }}>{c.capacity} seats</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: 10, color: "#4a5568", textTransform: "uppercase" }}>Location</div>
+                  <div style={{ fontSize: 10, color: "#4a5568", textTransform: "uppercase" }}>
+                    Location
+                  </div>
                   <div style={{ fontSize: 12, color: "#6b7c8d" }}>{c.location}</div>
                 </div>
               </div>
+
+              {/* Tags */}
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
                 {c.hasProjector && <Tag>Projector</Tag>}
                 {c.hasWhiteboard && <Tag>Whiteboard</Tag>}
                 {c.hasComputers && <Tag>Computers</Tag>}
                 {!c.isActive && <Tag color="#DC3545">Inactive</Tag>}
               </div>
+
+              {/* Description */}
               {c.description && (
                 <div style={{ fontSize: 11, color: "#4a5568", marginBottom: 10, lineHeight: 1.5 }}>
                   {c.description}
                 </div>
               )}
+
+              {/* Admin actions */}
               {isAdmin && (
                 <div style={{ display: "flex", gap: 6 }}>
                   <button
@@ -308,10 +362,15 @@ export default function ClassroomsView({ addToast }) {
         </div>
       )}
 
+      {/* Modals */}
       {showCreate && (
         <ClassroomModal
           onClose={() => setShowCreate(false)}
-          onSaved={() => { setShowCreate(false); load(); addToast("Classroom created!", "success"); }}
+          onSaved={() => {
+            setShowCreate(false);
+            load();
+            addToast("Classroom created!", "success");
+          }}
           addToast={addToast}
         />
       )}
@@ -319,7 +378,11 @@ export default function ClassroomsView({ addToast }) {
         <ClassroomModal
           room={editRoom}
           onClose={() => setEditRoom(null)}
-          onSaved={() => { setEditRoom(null); load(); addToast("Classroom updated!", "success"); }}
+          onSaved={() => {
+            setEditRoom(null);
+            load();
+            addToast("Classroom updated!", "success");
+          }}
           addToast={addToast}
         />
       )}
