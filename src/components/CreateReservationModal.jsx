@@ -28,46 +28,54 @@ export default function CreateReservationModal({
   });
   const [loading, setLoading] = useState(false);
 
-  async function submit() {
-    setLoading(true);
+ async function submit() {
+  setLoading(true);
 
-    onst [startDateStr, startTimeStr] = form.startTime.split("T");
-const [endDateStr, endTimeStr] = form.endTime.split("T");
-const startHour = parseInt(startTimeStr.split(":")[0]);
-const endHour = parseInt(endTimeStr.split(":")[0]);
-const endMinute = parseInt(endTimeStr.split(":")[1]);
+  const [startDateStr, startTimeStr] = form.startTime.split("T");
+  const [endDateStr, endTimeStr] = form.endTime.split("T");
+  const startHour = parseInt(startTimeStr.split(":")[0]);
+  const endHour = parseInt(endTimeStr.split(":")[0]);
+  const endMinute = parseInt(endTimeStr.split(":")[1]);
 
-if (startHour < 8 || startHour > 19) {
-  addToast("Reservations can only start between 08:00 and 20:00.", "error");
-  setLoading(false);
-  return;
-}
-
-if (endHour > 20 || (endHour === 20 && endMinute > 0)) {
-  addToast("Reservations must end by 20:00.", "error");
-  setLoading(false);
-  return;
-}
-
-    try {
-      await apiFetch("/reservation", {
-        method: "POST",
-        body: JSON.stringify({
-          ...form,
-          startTime: start.toISOString(),
-          endTime: end.toISOString(),
-          attendeeCount: form.attendeeCount
-            ? parseInt(form.attendeeCount)
-            : null,
-        }),
-      });
-      onCreated();
-    } catch (e) {
-      addToast(e.message, "error");
-    } finally {
-      setLoading(false);
-    }
+  if (startHour < 8 || startHour > 19) {
+    addToast("Reservations can only start between 08:00 and 20:00.", "error");
+    setLoading(false);
+    return;
   }
+
+  if (endHour > 20 || (endHour === 20 && endMinute > 0)) {
+    addToast("Reservations must end by 20:00.", "error");
+    setLoading(false);
+    return;
+  }
+
+  const selectedClassroom = active.find(c => c.id === form.classroomId);
+  if (selectedClassroom && form.attendeeCount && parseInt(form.attendeeCount) > selectedClassroom.capacity) {
+    addToast(`Attendee count exceeds classroom capacity (${selectedClassroom.capacity}).`, "error");
+    setLoading(false);
+    return;
+  }
+
+  const start = new Date(form.startTime);
+  const end = new Date(form.endTime);
+
+  try {
+    await apiFetch("/reservation", {
+      method: "POST",
+      body: JSON.stringify({
+        ...form,
+        startTime: start.toISOString(),
+        endTime: end.toISOString(),
+        attendeeCount: form.attendeeCount ? parseInt(form.attendeeCount) : null,
+      }),
+    });
+    onCreated();
+  } catch (e) {
+    addToast(e.message, "error");
+  } finally {
+    setLoading(false);
+  }
+}
 
   return (
     <Modal title="New Reservation" onClose={onClose}>
